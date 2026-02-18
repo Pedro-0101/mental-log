@@ -42,6 +42,7 @@ func (e *autoSaveEntry) TypedKey(key *fyne.KeyEvent) {
 
 type NoteView struct {
 	noteService   *service.NoteService
+	dbService     *service.DBService
 	notes         []domain.Note
 	list          *widget.List
 	listContainer *fyne.Container
@@ -49,12 +50,23 @@ type NoteView struct {
 }
 
 func NewNoteView(noteService *service.NoteService) *NoteView {
-	return &NoteView{noteService: noteService}
+	return &NoteView{noteService: noteService, dbService: service.NewDBService()}
 }
 
 func (n *NoteView) CreateNoteButton(window fyne.Window) *widget.Button {
 	return widget.NewButton("Add Note", func() {
 		n.CreateNote(window)
+	})
+}
+
+func (n *NoteView) CreateSaveButton() *widget.Button {
+	return widget.NewButton("Save", func() {
+		err := n.dbService.SaveDatabase()
+		if err != nil {
+			slog.Error("Error saving database", "error", err)
+			return
+		}
+		slog.Info("Database saved")
 	})
 }
 
@@ -181,12 +193,12 @@ func (n *NoteView) DeleteNote(id int64) {
 	n.mainContent.Refresh()
 }
 
-func (n *NoteView) RenderNoteList(notes []domain.Note, addNoteButton *widget.Button) fyne.CanvasObject {
+func (n *NoteView) RenderNoteList(notes []domain.Note, addNoteButton, saveButton *widget.Button) fyne.CanvasObject {
 	n.notes = notes
 	n.listContainer = container.NewStack()
 	n.mainContent = container.NewStack(widget.NewLabel("Select a note to view its content"))
 
-	title := canvas.NewText("Notes", theme.ForegroundColor())
+	title := canvas.NewText("Notes", theme.Color(theme.ColorNameForeground))
 	title.TextStyle.Bold = true
 	title.TextSize = 20
 	header := container.NewPadded(title)
@@ -197,7 +209,7 @@ func (n *NoteView) RenderNoteList(notes []domain.Note, addNoteButton *widget.But
 	n.RefreshList()
 
 	sidebar := container.NewHBox(
-		container.NewStack(sidebarSpacer, container.NewBorder(container.NewVBox(header, addNoteButton), nil, nil, nil, n.listContainer)),
+		container.NewStack(sidebarSpacer, container.NewBorder(container.NewVBox(header, saveButton, addNoteButton), nil, nil, nil, n.listContainer)),
 		widget.NewSeparator(),
 	)
 

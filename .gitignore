@@ -13,6 +13,10 @@ cgotest.exe
 # Output binary (specific)
 mental-log.exe
 mental-log-static.exe
+main
+main.exe
+main.exe~
+main.out
 
 # OS Specific
 .DS_Store

@@ -65,8 +65,9 @@ func (f *FyneConfig) Start(notes []domain.Note) {
 
 	noteView := view.NewNoteView(f.noteService)
 	addNoteButton := noteView.CreateNoteButton(window)
+	saveButton := noteView.CreateSaveButton()
 
-	layout := noteView.RenderNoteList(notes, addNoteButton)
+	layout := noteView.RenderNoteList(notes, addNoteButton, saveButton)
 
 	window.SetContent(layout)
 	window.ShowAndRun()
