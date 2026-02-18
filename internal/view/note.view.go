@@ -3,14 +3,18 @@ package view
 import (
 	"image/color"
 	"log/slog"
+	"regexp"
+	"strings"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
+	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 	"github.com/Pedro-0101/mental-log/internal/domain"
+	"github.com/Pedro-0101/mental-log/internal/helper"
 	"github.com/Pedro-0101/mental-log/internal/service"
 )
 
@@ -27,12 +31,13 @@ func newAutoSaveEntry(multiline bool, onTrigger func()) *autoSaveEntry {
 }
 
 func (e *autoSaveEntry) TypedKey(key *fyne.KeyEvent) {
-	e.Entry.TypedKey(key)
-	if key.Name == fyne.KeySpace || key.Name == fyne.KeyEnter || key.Name == fyne.KeyReturn {
+	if key.Name == fyne.KeyEnter || key.Name == fyne.KeyReturn {
 		if e.onTrigger != nil {
 			e.onTrigger()
 		}
+		return
 	}
+	e.Entry.TypedKey(key)
 }
 
 type NoteView struct {
@@ -73,6 +78,8 @@ func (n *NoteView) CreateNote(window fyne.Window) {
 					return
 				}
 				slog.Info("Note created", "note", newNote.Title)
+				n.mainContent.Objects = []fyne.CanvasObject{n.RenderNoteContent(newNote.ID)}
+				n.mainContent.Refresh()
 				n.RefreshList()
 			}
 		},
@@ -145,19 +152,10 @@ func (n *NoteView) RefreshList() {
 	n.listContainer.Refresh()
 }
 
-func (n *NoteView) UpdateNote(id int64, title, content string) {
-	// Find the old note to see if title changed
-	var oldTitle string
-	for _, note := range n.notes {
-		if note.ID == id {
-			oldTitle = note.Title
-			break
-		}
-	}
+func (n *NoteView) UpdateNote(id int64, content string) {
 
 	note := &domain.Note{
 		ID:      id,
-		Title:   title,
 		Content: content,
 	}
 
@@ -169,10 +167,6 @@ func (n *NoteView) UpdateNote(id int64, title, content string) {
 
 	slog.Info("Note updated (sync)", "id", id)
 
-	// Only refresh the list if the title changed
-	if oldTitle != title {
-		n.RefreshList()
-	}
 }
 
 func (n *NoteView) DeleteNote(id int64) {
@@ -183,6 +177,8 @@ func (n *NoteView) DeleteNote(id int64) {
 	}
 	slog.Info("Note deleted", "note", id)
 	n.RefreshList()
+	n.mainContent.Objects = []fyne.CanvasObject{widget.NewLabel("Select a note to view its content")}
+	n.mainContent.Refresh()
 }
 
 func (n *NoteView) RenderNoteList(notes []domain.Note, addNoteButton *widget.Button) fyne.CanvasObject {
@@ -208,6 +204,65 @@ func (n *NoteView) RenderNoteList(notes []domain.Note, addNoteButton *widget.But
 	return container.NewBorder(nil, nil, sidebar, nil, n.mainContent)
 }
 
+type paragraphBlock struct {
+	Timestamp string
+	Text      string
+}
+
+func parseContentBlocks(content string) []paragraphBlock {
+	if strings.TrimSpace(content) == "" {
+		return nil
+	}
+
+	re := regexp.MustCompile(`\[(\d{2}/\d{2} \d{2}:\d{2})\]`)
+	indices := re.FindAllStringIndex(content, -1)
+	matches := re.FindAllStringSubmatch(content, -1)
+
+	if len(indices) == 0 {
+		return []paragraphBlock{{Timestamp: "", Text: strings.TrimSpace(content)}}
+	}
+
+	var blocks []paragraphBlock
+	for i, idx := range indices {
+		ts := matches[i][1]
+		textStart := idx[1]
+		if textStart < len(content) && content[textStart] == '\n' {
+			textStart++
+		}
+
+		var textEnd int
+		if i+1 < len(indices) {
+			textEnd = indices[i+1][0]
+		} else {
+			textEnd = len(content)
+		}
+
+		text := strings.TrimRight(content[textStart:textEnd], "\n")
+		if text != "" {
+			blocks = append(blocks, paragraphBlock{Timestamp: ts, Text: text})
+		}
+	}
+
+	return blocks
+}
+
+func buildParagraphWidget(block paragraphBlock) fyne.CanvasObject {
+	var dateLabel *canvas.Text
+	if block.Timestamp != "" {
+		dateLabel = canvas.NewText("["+block.Timestamp+"]", color.NRGBA{R: 130, G: 130, B: 130, A: 255})
+		dateLabel.TextSize = 11
+		dateLabel.TextStyle.Italic = true
+	}
+
+	textLabel := widget.NewLabel(block.Text)
+	textLabel.Wrapping = fyne.TextWrapWord
+
+	if dateLabel != nil {
+		return container.NewVBox(dateLabel, textLabel)
+	}
+	return container.NewVBox(textLabel)
+}
+
 func (n *NoteView) RenderNoteContent(noteId int64) fyne.CanvasObject {
 	slog.Info("Rendering note content", "noteId", noteId)
 
@@ -220,19 +275,67 @@ func (n *NoteView) RenderNoteContent(noteId int64) fyne.CanvasObject {
 	titleEntry := newAutoSaveEntry(false, nil)
 	titleEntry.SetText(note.Title)
 	titleEntry.TextStyle.Bold = true
+	paragraphs := container.NewVBox()
 
-	contentEntry := newAutoSaveEntry(true, nil)
-	contentEntry.SetText(note.Content)
-	contentEntry.SetPlaceHolder("Start typing...")
-
-	saveFunc := func() {
-		n.UpdateNote(note.ID, titleEntry.Text, contentEntry.Text)
+	blocks := parseContentBlocks(note.Content)
+	for _, block := range blocks {
+		paragraphs.Add(buildParagraphWidget(block))
 	}
 
-	titleEntry.onTrigger = saveFunc
-	contentEntry.onTrigger = saveFunc
+	contentEntry := newAutoSaveEntry(true, nil)
+	contentEntry.SetPlaceHolder("Digite e pressione Enter para salvar...")
 
-	editArea := container.NewBorder(titleEntry, nil, nil, nil, contentEntry)
+	scrollContent := container.NewVBox(
+		paragraphs,
+		layout.NewSpacer(),
+		contentEntry,
+	)
+	scrollArea := container.NewVScroll(scrollContent)
+
+	commitParagraph := func() {
+		text := strings.TrimSpace(contentEntry.Text)
+		if text == "" {
+			return
+		}
+
+		text = strings.ReplaceAll(text, "\n", " ")
+
+		timestamp := helper.GetCurrentTimeStr()
+		newBlock := "[" + timestamp + "]\n" + text + "\n"
+
+		if note.Content != "" && !strings.HasSuffix(note.Content, "\n") {
+			note.Content += "\n"
+		}
+		note.Content += newBlock
+
+		n.UpdateNote(note.ID, note.Content)
+
+		paragraphs.Add(buildParagraphWidget(paragraphBlock{Timestamp: timestamp, Text: text}))
+		paragraphs.Refresh()
+		contentEntry.SetText("")
+		contentEntry.Refresh()
+
+		scrollArea.ScrollToBottom()
+
+		slog.Info("Paragraph committed", "noteId", noteId, "timestamp", timestamp)
+	}
+
+	contentEntry.onTrigger = commitParagraph
+
+	titleEntry.onTrigger = func() {
+		note.Title = titleEntry.Text
+		noteToUpdate := &domain.Note{
+			ID:    note.ID,
+			Title: note.Title,
+		}
+		err := n.noteService.UpdateNote(noteToUpdate)
+		if err != nil {
+			slog.Error("Error updating note title", "error", err)
+		}
+		n.RefreshList()
+	}
+
+	editArea := container.NewBorder(titleEntry, nil, nil, nil, scrollArea)
 
 	return container.NewPadded(editArea)
 }
