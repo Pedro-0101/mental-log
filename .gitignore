@@ -1,0 +1,29 @@
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Test binary (specific)
+cgotest.exe
+
+# Output binary (specific)
+mental-log.exe
+mental-log-static.exe
+
+# OS Specific
+.DS_Store
+Thumbs.db
+
+# Editor directories
+.vscode/
+.idea/
+
+# Go
+vendor/
+
+# User requested to keep the database synced, so we do NOT ignore .db files
+# *.db
