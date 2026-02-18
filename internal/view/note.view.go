@@ -249,7 +249,7 @@ func parseContentBlocks(content string) []paragraphBlock {
 func buildParagraphWidget(block paragraphBlock) fyne.CanvasObject {
 	var dateLabel *canvas.Text
 	if block.Timestamp != "" {
-		dateLabel = canvas.NewText("["+block.Timestamp+"]", color.NRGBA{R: 130, G: 130, B: 130, A: 255})
+		dateLabel = canvas.NewText("["+block.Timestamp+"] | Pedro Paulino", color.NRGBA{R: 130, G: 130, B: 130, A: 255})
 		dateLabel.TextSize = 11
 		dateLabel.TextStyle.Italic = true
 	}
