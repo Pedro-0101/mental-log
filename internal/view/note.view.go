@@ -58,15 +58,9 @@ func (n *NoteView) CreateNoteButton(window fyne.Window) *widget.Button {
 		n.CreateNote(window)
 	})
 }
-
 func (n *NoteView) CreateSaveButton() *widget.Button {
 	return widget.NewButton("Save", func() {
-		err := n.dbService.SaveDatabase()
-		if err != nil {
-			slog.Error("Error saving database", "error", err)
-			return
-		}
-		slog.Info("Database saved")
+		n.dbService.SaveDatabase()
 	})
 }
 
