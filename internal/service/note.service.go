@@ -8,19 +8,24 @@ import (
 )
 
 type NoteService struct {
-	noteRepo *repo.NoteRepo
+	noteRepo      *repo.NoteRepo
+	folderService *FolderService
 }
 
-func NewNoteService(noteRepo *repo.NoteRepo) *NoteService {
-	return &NoteService{noteRepo: noteRepo}
+func NewNoteService(noteRepo *repo.NoteRepo, folderService *FolderService) *NoteService {
+	return &NoteService{noteRepo: noteRepo, folderService: folderService}
 }
 
-func (s *NoteService) CreateNote(title string) (*domain.Note, error) {
-	newNote, err := s.noteRepo.Create(title)
+func (s *NoteService) CreateNote(title, tags string, folderID *int64) (*domain.Note, error) {
+	mockedUserID := int64(1)
+	newNote, err := s.noteRepo.Create(title, tags, folderID, mockedUserID)
 	if err != nil {
 		slog.Error("Error creating note", "error", err)
 		return nil, err
 	}
+
+	// Propagate tags to parent folders
+	s.folderService.PropagateTags(folderID, tags)
 
 	return newNote, nil
 }
@@ -42,4 +47,12 @@ func (s *NoteService) UpdateNote(note *domain.Note) error {
 
 func (s *NoteService) DeleteNote(id int64) error {
 	return s.noteRepo.Delete(id)
+}
+
+func (s *NoteService) FindByFolderID(folderID int64) ([]domain.Note, error) {
+	return s.noteRepo.FindByFolderID(folderID)
+}
+
+func (s *NoteService) FindRootNotes() ([]domain.Note, error) {
+	return s.noteRepo.FindRootNotes()
 }

@@ -10,8 +10,10 @@ import (
 type App struct {
 	DB *gorm.DB
 
-	NoteRepo    *repo.NoteRepo
-	NoteService *service.NoteService
+	NoteRepo      *repo.NoteRepo
+	NoteService   *service.NoteService
+	FolderRepo    *repo.FolderRepo
+	FolderService *service.FolderService
 }
 
 func NewApp() (*App, error) {
@@ -24,9 +26,11 @@ func NewApp() (*App, error) {
 
 	// Repositories
 	noteRepo := repo.NewNoteRepo(db)
+	folderRepo := repo.NewFolderRepo(db)
 
 	// Services
-	noteService := service.NewNoteService(noteRepo)
+	folderService := service.NewFolderService(folderRepo)
+	noteService := service.NewNoteService(noteRepo, folderService)
 	entryService := service.NewEntryService()
 
 	// Fyne Config
@@ -37,14 +41,16 @@ func NewApp() (*App, error) {
 	width := 800
 	height := 600
 
-	fyneConfig := NewFyneConfig(name, version, theme, fontSize, width, height, noteService)
+	fyneConfig := NewFyneConfig(name, version, theme, fontSize, width, height, noteService, folderService)
 
 	fyneConfig.Start(entryService)
 
 	return &App{
-		DB:          db,
-		NoteRepo:    noteRepo,
-		NoteService: noteService,
+		DB:            db,
+		NoteRepo:      noteRepo,
+		NoteService:   noteService,
+		FolderRepo:    folderRepo,
+		FolderService: folderService,
 	}, nil
 }
 

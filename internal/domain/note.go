@@ -3,9 +3,9 @@ package domain
 import "time"
 
 type Note struct {
-	ID        int64     `gorm:"primaryKey"`
-	UserID    int64     `gorm:"not null"`
-	FolderID  int64     `gorm:"not null"`
+	ID        int64 `gorm:"primaryKey"`
+	UserID    int64 `gorm:"not null"`
+	FolderID  *int64
 	Content   string    `gorm:"type:text"`
 	Title     string    `gorm:"not null"`
 	Tags      string    `gorm:"not null"`

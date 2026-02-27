@@ -44,12 +44,8 @@ func NewEntryView(service *service.EntryService, width float32, height float32) 
 
 func (e *EntryView) RenderEntry() fyne.CanvasObject {
 
-	container := container.NewWithoutLayout()
-
 	// Text entry for dumping thoughts
 	entry := NewSubmitEntry()
-
-	entry.Resize(fyne.NewSize(e.width, e.height))
 
 	entry.SetPlaceHolder("Enter your entry here...")
 
@@ -58,9 +54,7 @@ func (e *EntryView) RenderEntry() fyne.CanvasObject {
 		e.saveEntry(entry)
 	}
 
-	container.Add(entry)
-
-	return container
+	return container.NewMax(entry)
 
 }
 

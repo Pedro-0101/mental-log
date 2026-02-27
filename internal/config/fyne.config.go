@@ -19,7 +19,8 @@ type FyneConfig struct {
 	FontSize float32
 	Size     fyneSize
 
-	noteService *service.NoteService
+	noteService   *service.NoteService
+	folderService *service.FolderService
 }
 
 type fyneSize struct {
@@ -36,6 +37,7 @@ func NewFyneConfig(
 	height int,
 
 	noteService *service.NoteService,
+	folderService *service.FolderService,
 ) *FyneConfig {
 
 	var themeValue fyne.Theme
@@ -53,7 +55,8 @@ func NewFyneConfig(
 		FontSize: fontSize,
 		Size:     fyneSize{Width: float32(width), Height: float32(height)},
 
-		noteService: noteService,
+		noteService:   noteService,
+		folderService: folderService,
 	}
 }
 
@@ -79,7 +82,7 @@ func (f *FyneConfig) Start(entryService *service.EntryService) {
 		Height: f.Size.Height * 0.99,
 	}
 
-	folderView := folder.NewListFolder(service.NewFolderService(), folderWindowSize.Width, folderWindowSize.Height)
+	folderView := folder.NewListFolder(f.folderService, f.noteService, folderWindowSize.Width, folderWindowSize.Height, window)
 	entryView := entry.NewEntryView(entryService, entryWindowSize.Width, entryWindowSize.Height)
 
 	content := container.NewHSplit(folderView.RenderList(), entryView.RenderEntry())

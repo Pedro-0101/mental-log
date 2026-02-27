@@ -13,9 +13,13 @@ func NewNoteRepo(db *gorm.DB) *NoteRepo {
 	return &NoteRepo{DB: db}
 }
 
-func (r *NoteRepo) Create(title string) (*domain.Note, error) {
+func (r *NoteRepo) Create(title, tags string, folderID *int64, userID int64) (*domain.Note, error) {
 	newNote := &domain.Note{
-		Title: title,
+		Title:    title,
+		Tags:     tags,
+		FolderID: folderID,
+		UserID:   userID,
+		StatusID: 1,
 	}
 
 	if err := r.DB.Create(newNote).Error; err != nil {
@@ -52,4 +56,21 @@ func (r *NoteRepo) Update(note *domain.Note) error {
 
 func (r *NoteRepo) Delete(id int64) error {
 	return r.DB.Delete(&domain.Note{}, id).Error
+}
+
+func (r *NoteRepo) FindByFolderID(folderID int64) ([]domain.Note, error) {
+	var notes []domain.Note
+	if err := r.DB.Where("folder_id = ?", folderID).Find(&notes).Error; err != nil {
+		return nil, err
+	}
+	return notes, nil
+}
+
+// FindRootNotes returns notes that are not inside any folder.
+func (r *NoteRepo) FindRootNotes() ([]domain.Note, error) {
+	var notes []domain.Note
+	if err := r.DB.Where("folder_id IS NULL").Find(&notes).Error; err != nil {
+		return nil, err
+	}
+	return notes, nil
 }
