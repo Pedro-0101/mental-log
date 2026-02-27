@@ -27,6 +27,7 @@ func NewApp() (*App, error) {
 
 	// Services
 	noteService := service.NewNoteService(noteRepo)
+	entryService := service.NewEntryService()
 
 	// Fyne Config
 	name := "Mental dump"
@@ -38,12 +39,7 @@ func NewApp() (*App, error) {
 
 	fyneConfig := NewFyneConfig(name, version, theme, fontSize, width, height, noteService)
 
-	notes, err := noteService.FindAll()
-	if err != nil {
-		return nil, err
-	}
-
-	fyneConfig.Start(notes)
+	fyneConfig.Start(entryService)
 
 	return &App{
 		DB:          db,

@@ -14,10 +14,10 @@ func NewDBService() *DBService {
 	return &DBService{}
 }
 
-func (d *DBService) startSave() {
+/*func (d *DBService) startSave() {
 	go d.SaveDatabase()
 	slog.Info("Go rountine initialized")
-}
+}*/
 
 func (d *DBService) SaveDatabase() {
 	start := time.Now()

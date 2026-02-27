@@ -5,10 +5,11 @@ import (
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
+	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/theme"
-	"github.com/Pedro-0101/mental-dump/internal/domain"
 	"github.com/Pedro-0101/mental-dump/internal/service"
-	"github.com/Pedro-0101/mental-dump/internal/view"
+	"github.com/Pedro-0101/mental-dump/internal/view/entry"
+	"github.com/Pedro-0101/mental-dump/internal/view/folder"
 )
 
 type FyneConfig struct {
@@ -16,10 +17,14 @@ type FyneConfig struct {
 	Icon     string
 	Theme    fyne.Theme
 	FontSize float32
-	Width    int
-	Height   int
+	Size     fyneSize
 
 	noteService *service.NoteService
+}
+
+type fyneSize struct {
+	Width  float32
+	Height float32
 }
 
 func NewFyneConfig(
@@ -46,14 +51,13 @@ func NewFyneConfig(
 		Icon:     icon,
 		Theme:    themeValue,
 		FontSize: fontSize,
-		Width:    width,
-		Height:   height,
+		Size:     fyneSize{Width: float32(width), Height: float32(height)},
 
 		noteService: noteService,
 	}
 }
 
-func (f *FyneConfig) Start(notes []domain.Note) {
+func (f *FyneConfig) Start(entryService *service.EntryService) {
 
 	slog.Info("Starting Fyne app")
 
@@ -61,14 +65,26 @@ func (f *FyneConfig) Start(notes []domain.Note) {
 	a.Settings().SetTheme(f.Theme)
 
 	window := a.NewWindow(f.Title)
-	window.Resize(fyne.NewSize(float32(f.Width), float32(f.Height)))
+	window.Resize(fyne.NewSize(f.Size.Width, f.Size.Height))
 
-	noteView := view.NewNoteView(f.noteService)
-	addNoteButton := noteView.CreateNoteButton(window)
-	saveButton := noteView.CreateSaveButton()
+	// Configure entry view
+	var entryWindowSize fyneSize = fyneSize{
+		Width:  f.Size.Width * 0.80,
+		Height: f.Size.Height * 0.99,
+	}
 
-	layout := noteView.RenderNoteList(notes, addNoteButton, saveButton)
+	// Configure folder view
+	var folderWindowSize fyneSize = fyneSize{
+		Width:  f.Size.Width * 0.20,
+		Height: f.Size.Height * 0.99,
+	}
 
-	window.SetContent(layout)
+	folderView := folder.NewListFolder(service.NewFolderService(), folderWindowSize.Width, folderWindowSize.Height)
+	entryView := entry.NewEntryView(entryService, entryWindowSize.Width, entryWindowSize.Height)
+
+	content := container.NewHSplit(folderView.RenderList(), entryView.RenderEntry())
+	content.SetOffset(0.2)
+
+	window.SetContent(content)
 	window.ShowAndRun()
 }
