@@ -65,7 +65,7 @@ func (r *NoteRepo) FindByID(id int64) (*domain.Note, error) {
 }
 
 func (r *NoteRepo) Update(note *domain.Note) error {
-	_, err := r.DB.Exec("UPDATE notes SET content = ?, updated_at = ? WHERE id = ?", note.Content, time.Now(), note.ID)
+	_, err := r.DB.Exec("UPDATE notes SET title = ?, content = ?, updated_at = ? WHERE id = ?", note.Title, note.Content, time.Now(), note.ID)
 	if err != nil {
 		return err
 	}

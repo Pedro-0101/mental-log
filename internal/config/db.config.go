@@ -2,16 +2,17 @@ package config
 
 import (
 	"database/sql"
+	"fmt"
 	"log/slog"
 
-	_ "github.com/mattn/go-sqlite3"
+	_ "modernc.org/sqlite"
 )
 
 func NewDB() (*sql.DB, error) {
 
 	slog.Info("Starting database")
 
-	db, err := sql.Open("sqlite3", "./mental-log.db")
+	db, err := sql.Open("sqlite", "./mental-log.db")
 	if err != nil {
 		return nil, err
 	}
@@ -21,7 +22,7 @@ func NewDB() (*sql.DB, error) {
 	slog.Info("Creating database tables")
 
 	slog.Info("Creating notes table")
-	db.Exec(`
+	_, err = db.Exec(`
 		CREATE TABLE IF NOT EXISTS notes (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			title TEXT NOT NULL,
@@ -30,12 +31,11 @@ func NewDB() (*sql.DB, error) {
 			updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 		)
 	`)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create notes table: %w", err)
+	}
 
-	slog.Info("Notes table created")
-
-	slog.Info("Database tables created")
-
-	slog.Info("Database started")
+	slog.Info("Database tables initialized successfully")
 
 	return db, nil
 }

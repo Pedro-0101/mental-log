@@ -158,21 +158,14 @@ func (n *NoteView) RefreshList() {
 	n.listContainer.Refresh()
 }
 
-func (n *NoteView) UpdateNote(id int64, content string) {
-
-	note := &domain.Note{
-		ID:      id,
-		Content: content,
-	}
-
+func (n *NoteView) UpdateNote(note *domain.Note) {
 	err := n.noteService.UpdateNote(note)
 	if err != nil {
 		slog.Error("Error updating note", "error", err)
 		return
 	}
 
-	slog.Info("Note updated (sync)", "id", id)
-
+	slog.Info("Note updated (sync)", "id", note.ID)
 }
 
 func (n *NoteView) DeleteNote(id int64) {
@@ -314,7 +307,7 @@ func (n *NoteView) RenderNoteContent(noteId int64) fyne.CanvasObject {
 		}
 		note.Content += newBlock
 
-		n.UpdateNote(note.ID, note.Content)
+		n.UpdateNote(note)
 
 		paragraphs.Add(buildParagraphWidget(paragraphBlock{Timestamp: timestamp, Text: text}))
 		paragraphs.Refresh()
@@ -330,11 +323,7 @@ func (n *NoteView) RenderNoteContent(noteId int64) fyne.CanvasObject {
 
 	titleEntry.onTrigger = func() {
 		note.Title = titleEntry.Text
-		noteToUpdate := &domain.Note{
-			ID:    note.ID,
-			Title: note.Title,
-		}
-		err := n.noteService.UpdateNote(noteToUpdate)
+		err := n.noteService.UpdateNote(note)
 		if err != nil {
 			slog.Error("Error updating note title", "error", err)
 		}
