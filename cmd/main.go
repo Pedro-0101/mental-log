@@ -3,7 +3,7 @@ package main
 import (
 	"log/slog"
 
-	"github.com/Pedro-0101/mental-log/internal/config"
+	"github.com/Pedro-0101/mental-dump/internal/config"
 )
 
 func main() {
