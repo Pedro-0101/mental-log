@@ -1,38 +1,36 @@
 package config
 
 import (
-	"database/sql"
 	"fmt"
 	"log/slog"
 
-	_ "modernc.org/sqlite"
+	"github.com/Pedro-0101/mental-dump/internal/domain"
+	"github.com/glebarez/sqlite"
+	"gorm.io/gorm"
 )
 
-func NewDB() (*sql.DB, error) {
+func NewDB() (*gorm.DB, error) {
 
 	slog.Info("Starting database")
 
-	db, err := sql.Open("sqlite", "./mental-log.db")
+	db, err := gorm.Open(sqlite.Open("./mental-dump.db"), &gorm.Config{})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to open database: %w", err)
 	}
 
 	slog.Info("Database connected")
 
-	slog.Info("Creating database tables")
+	slog.Info("Auto migrating database tables")
 
-	slog.Info("Creating notes table")
-	_, err = db.Exec(`
-		CREATE TABLE IF NOT EXISTS notes (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			title TEXT NOT NULL,
-			content TEXT,
-			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-			updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-		)
-	`)
+	err = db.AutoMigrate(
+		&domain.Status{},
+		&domain.User{},
+		&domain.Folder{},
+		&domain.Note{},
+		&domain.Entry{},
+	)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create notes table: %w", err)
+		return nil, fmt.Errorf("failed to auto migrate tables: %w", err)
 	}
 
 	slog.Info("Database tables initialized successfully")

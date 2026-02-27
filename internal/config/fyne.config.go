@@ -6,9 +6,9 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/theme"
-	"github.com/Pedro-0101/mental-log/internal/domain"
-	"github.com/Pedro-0101/mental-log/internal/service"
-	"github.com/Pedro-0101/mental-log/internal/view"
+	"github.com/Pedro-0101/mental-dump/internal/domain"
+	"github.com/Pedro-0101/mental-dump/internal/service"
+	"github.com/Pedro-0101/mental-dump/internal/view"
 )
 
 type FyneConfig struct {

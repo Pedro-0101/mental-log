@@ -13,9 +13,9 @@ import (
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
-	"github.com/Pedro-0101/mental-log/internal/domain"
-	"github.com/Pedro-0101/mental-log/internal/helper"
-	"github.com/Pedro-0101/mental-log/internal/service"
+	"github.com/Pedro-0101/mental-dump/internal/domain"
+	"github.com/Pedro-0101/mental-dump/internal/helper"
+	"github.com/Pedro-0101/mental-dump/internal/service"
 )
 
 type autoSaveEntry struct {

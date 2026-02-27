@@ -3,8 +3,8 @@ package service
 import (
 	"log/slog"
 
-	"github.com/Pedro-0101/mental-log/internal/domain"
-	"github.com/Pedro-0101/mental-log/internal/repo"
+	"github.com/Pedro-0101/mental-dump/internal/domain"
+	"github.com/Pedro-0101/mental-dump/internal/repo"
 )
 
 type NoteService struct {

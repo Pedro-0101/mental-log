@@ -1,14 +1,14 @@
 package config
 
 import (
-	"database/sql"
+	"gorm.io/gorm"
 
-	"github.com/Pedro-0101/mental-log/internal/repo"
-	"github.com/Pedro-0101/mental-log/internal/service"
+	"github.com/Pedro-0101/mental-dump/internal/repo"
+	"github.com/Pedro-0101/mental-dump/internal/service"
 )
 
 type App struct {
-	DB *sql.DB
+	DB *gorm.DB
 
 	NoteRepo    *repo.NoteRepo
 	NoteService *service.NoteService
@@ -28,8 +28,15 @@ func NewApp() (*App, error) {
 	// Services
 	noteService := service.NewNoteService(noteRepo)
 
-	// Fyne
-	fyneConfig := NewFyneConfig("Mental Log", "", "dark", 12, 800, 600, noteService)
+	// Fyne Config
+	name := "Mental dump"
+	version := "0.0.1"
+	theme := "dark"
+	fontSize := float32(12.0)
+	width := 800
+	height := 600
+
+	fyneConfig := NewFyneConfig(name, version, theme, fontSize, width, height, noteService)
 
 	notes, err := noteService.FindAll()
 	if err != nil {
@@ -46,5 +53,9 @@ func NewApp() (*App, error) {
 }
 
 func (a *App) Close() error {
-	return a.DB.Close()
+	sqlDB, err := a.DB.DB()
+	if err != nil {
+		return err
+	}
+	return sqlDB.Close()
 }
